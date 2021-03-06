@@ -30,6 +30,8 @@ class TileProblem:
         self.board_type = board_type
         self.heuristic_type = heuristic_type
         self.parent = None # store the parent instance 
+        self.f_value = 0
+        self.g_value = 0
         if board_type == 3:
             self.puzzle_goal = [
                 [1, 2, 3],

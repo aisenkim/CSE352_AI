@@ -43,15 +43,80 @@ def a_star(puzzle, board_type, heuristics_type):
     # create node -> TileProblem instance
     # insert it in frontier
 
-
-def RBFS(puzzle, board_type, heuristics_type, f_limit):
+def recursive_best_first_search(puzzle, board_type, heuristics_type):
+    # initial stage
     problem  = TileProblem(puzzle, board_type, heuristics_type)
+    
+    return RBFS(problem, float('inf'))
+
+
+def RBFS(problem, f_limit):
     if problem.is_goal():
-        
+        return problem, None # where problem -> solution 
+    successors = []
+    g_val = problem.g_value
+    g_val +=1 
+    # add child node -> successors
+    for action in range(len(problem.move)):
+        if canMove(problem.state, action):
+            # g_val +=1 
+            new_child = problem.transition_func(action)
+            new_child.g_value = g_val # update g_value ###########&*&*&*&*& ccheck!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            f_value = new_child.f_func(g_val)
+            new_child.f_value = f_value # keep recording f_value in all instance
+            successors.append(new_child)
+            # successors.put((max(f_value, problem.f_value), id(new_child), new_child))
+    if len(successors) == 0:
+        return None, float('inf')
+    # for i in range(len(successors.queue)) : 
+    #     s = successors.queue[i][2] # TileProblem Object
+    #     s.f_value = max(f_value, problem.f_value)  # how do we know if there is any value from previous search
+    while len(successors) != 0:
+        successors.sort(key=lambda x: x.f_value, reverse=False)
+        # best = successors.queue[0][2] # --> TileProblem containing the lowest f_value (best)
+        best = successors[0]
+        if best.f_value > f_limit :
+            return None, best.f_value
+        alternative = successors[1]  # --> TileProblem containing the second lowest f_value (second best)
+        result, best.f_value = RBFS(best, min(f_limit, alternative.f_value) )
+        successors.append(best)
+        if result != None:
+            return result, None
 
 
 
 
+"""   
+def RBFS(problem, f_limit):
+    if problem.is_goal():
+        return problem, None # where problem -> solution 
+    successors = PriorityQueue() 
+    g_val = problem.g_value
+    g_val += 1
+    # add child node -> successors
+    for action in range(len(problem.move)):
+        if canMove(problem.state, action):
+            new_child = problem.transition_func(action)
+            f_value = new_child.f_func(g_val)
+            #update f with value from previous search, if any 
+            new_child.f_value = f_value # keep recording f_value in all instance
+            if new_child.state != new_child.parent.state: # don't consider what was added (maybe remove this)
+                successors.put((max(f_value, problem.f_value), id(new_child), new_child))
+    if successors.empty():
+        return None, float('inf')
+    while 1:
+        best = successors.get() # [0]-> f-value, [1] -> id, [2] -> TileProblem instance
+        best_f =best[0] # f-value of dequeued 
+        best_puzzle = best[2]
+        best_puzzle.f_value = best_f # update the TileProblem.f_value 
+        if best_puzzle.f_value > f_limit:
+            return None, best_puzzle.f_value
+        alternative_f = successors.get()[0] # second best f-val
+        result, best_puzzle.f_value = RBFS(best_puzzle, min(f_limit, alternative_f)) 
+        if result != None:
+            return result, None
+
+"""
 
 def is_explored(current, explored):
     if len(explored) == 0:
@@ -79,16 +144,25 @@ if __name__ == '__main__':
             'Wrong number of arguments. Usage:\npuzzleSolver.py <A> <N> <H> '
             '<INPUT_FILE_PATH> <OUTPUT_FILE_PATH>>')
 
+
+
 # test = [
-#     [1,2,0],
-#     [3,5,6],
-#     [4,7,8]
+#     [1,6,2],
+#     [4,0,5],
+#     [7,8,3]
 # ]
+
 test = [
-    [1,5,2],
-    [4,0,3],
-    [7,8,6]
+    [0,6,2],
+    [4,1,5],
+    [7,8,3]
 ]
+
+# test = [
+#     [1,5,2],
+#     [7,4,3],
+#     [0,8,6]
+# ]
 
 test2 = [
     [0,1,6,4],
@@ -96,7 +170,27 @@ test2 = [
     [9,10,11,8],
     [13,14,15,12]
 ]
-print(a_star(test2, 4, 2))
+
+test3 = [
+    [1,2,3,4],
+    [5,6,7,8],
+    [10,11,0,12],
+    [9,13,14,15]
+]
+
+print(a_star(test, 3, 2))
+# result = recursive_best_first_search(test, 3, 1)[0]
+# result = recursive_best_first_search(test2, 4, 2)[0]
+# result = recursive_best_first_search(test3, 4, 2)[0]
+solution = []
+solution.append(result.moved_state)
+# track back to parent nodes 
+parent = result.parent
+while parent.parent != None:
+    solution.append(parent.moved_state)
+    parent = parent.parent
+solution.reverse()
+print(solution)
 
 # practice = TileProblem(test, 3, 1)
 # practice2 = TileProblem(test, 3, 1)
