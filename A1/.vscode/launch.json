@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
-      "args": []
+      "args": ["1", "3", "1", "puzzle1.txt", "solution1.txt"]
     }
   ]
 }
