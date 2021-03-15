@@ -19,7 +19,8 @@ class CSP:
         self.unsigned_vars = PriorityQueue()
         for i in range(len(self.constraints)):
             # put the - length of constraints for each variable and Node(value, color)
-            self.unsigned_vars.put((-len(self.constraints[i]), Node(i, -1)))
+            # set the list of valid colors as 1 (since none has been constrained yet)
+            self.unsigned_vars.put((-len(self.constraints[i]), Node(i, -1, [1 for x in range(self.color_num)])))
 
     def set_LCV(self, assignment: dict) -> list:
         """

@@ -46,7 +46,7 @@ def dfs_plus_backtrack(assignment: dict, csp: CSP) -> dict:
     # select Most Constrained Variable
     variable: Node = csp.unsigned_vars.get()[1]
     #  find least constraining value(color)
-    color_count: list = csp.set_LCV(assignment)
+    color_count: list = csp.set_LCV(assignment)  # holds count of each color used by already assigned variables
     while len(color_count) > 0:
         # get color that is used least by variables already assigned
         # (which are most constrained)
