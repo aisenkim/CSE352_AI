@@ -1,5 +1,8 @@
 import sys
+import copy
 from Node import Node
+from queue import PriorityQueue
+from collections import deque
 from csp import CSP
 
 
@@ -7,7 +10,7 @@ def dfs(csp: CSP, m: int) -> dict:
     """
     call normal dfs if m == 0
     otherwise call dfs++
-    :param csp: instnace of CSP
+    :param csp: instance of CSP
     :param m: 0 -> normal dfs || 1 -> dfs++
     :return: dictionary containing solution
     """
@@ -43,29 +46,69 @@ def dfs_backtrack(assignment: dict, csp: CSP):
 def dfs_plus_backtrack(assignment: dict, csp: CSP) -> dict:
     if len(assignment) == len(csp.constraints):
         return assignment
-    # select Most Constrained Variable
-    variable: Node = csp.unsigned_vars.get()[1]
-    #  find least constraining value(color)
-    color_count: list = csp.set_LCV(assignment)  # holds count of each color used by already assigned variables
-    while len(color_count) > 0:
-        # get color that is used least by variables already assigned
-        # (which are most constrained)
-        value = color_count.pop(color_count.index(min(color_count)))
-        # --------------------------------------------------------------------------------------------
-        var_num: int = variable.value
-        var_constraints: list = csp.constraints[var_num]  # list of constraints for current variable
-        # loop through each constraint to check
-        if is_color_valid(var_constraints, assignment, value):
-            variable.color = value
-            assignment[var_num] = variable
-            # recursive call
-            result = dfs_backtrack(assignment, csp)
-            if len(result) != 0:  # if result != failure
+    # AC_3 to prune domain
+    AC_3(csp)
+    # select most constrained variable
+    variable: Node = csp.set_MCV()
+    # sort domains of current variable for LCV
+    sort_domains(csp.constraints, csp.colors_domains, variable.value, csp.color_num)
+    for color in csp.colors_domains[variable.value]:
+        if is_color_valid(csp.constraints[variable.value], assignment, color):
+            variable.color = color
+            assignment[variable.value] = variable
+            # push into assignments so mark as used by setting it as empty
+            # instead of doing it in csp.py
+            csp.constraints[variable.value] = []
+            #recursive call
+            result = dfs_plus_backtrack(assignment, csp)
+            if len(result) != 0:
                 return result
-            assignment.pop(var_num)
-            #  put it back to unassigned_vars
-            csp.unsigned_vars.put((-len(csp.constraints[var_num]), Node(i, -1)))
-    return {}  # return failure (should it be {} or assignment???)
+            assignment.pop(variable.value)
+    return {}
+
+
+def sort_domains(constraints, colors_domains, var_value, color_num):
+    lst = [0 for i in range(color_num)]
+    # for each constraints in variable...
+    for i in constraints[var_value]:
+        # for each color in domain of constrained variable
+        for j in colors_domains[i]:
+            if j != -1:
+                lst[j] += 1  # increment color's counter
+    # sort the list from least to greatest
+    for i in range(color_num):
+        min_idx = lst.index(min(lst))
+        lst[min_idx] += 100  # to get the next min idx
+        # update original var_value domain with sorted list
+        colors_domains[var_value][i] = min_idx
+
+
+def AC_3(csp: CSP):
+    local_arcs: deque = copy.deepcopy(csp.arcs)
+    while local_arcs:
+        val_i, val_j = local_arcs.popleft()
+        if remove_inconsistent_value(val_i, val_j, csp.colors_domains):
+            for k in local_arcs:
+                # if k[0] is Xi
+                if k[0] == val_i:
+                    local_arcs.append([k[1], k[0]])
+
+
+def remove_inconsistent_value(val_i: int, val_j: int, color_domains: list) -> bool:
+    removed = False
+    val_i_domain = color_domains[val_i]  # [ val_i colors ]
+    val_j_domain = color_domains[val_j]  # [val_j colors ]
+    for i in range(len(color_domains[val_i])):
+        satisfied_counter = 0
+        for j in range(len(color_domains[val_j])):
+            if val_i_domain[i] != val_j_domain[j] and val_j_domain[j] != -1:
+                # at least 1 color that allows (x,y) to be satisfied
+                satisfied_counter += 1
+        # if non satisfied for a color ... prune
+        if satisfied_counter == 0:
+            val_i_domain[i] = -1
+            removed = True
+    return removed
 
 
 def is_color_valid(constraints: list, assignment: dict, color: int) -> bool:
@@ -91,16 +134,19 @@ def select_unassigned(assignment: dict, csp: CSP) -> Node:
             return variable
 
 
-def create_csp_problem(input_file) -> CSP:
+def create_csp_problem(input_file, m) -> CSP:
     var_num, const_num, color_num = map(int, input_file.readline().split())
     constraints = [[] for i in range(var_num)]
     unsigned_vars = None  # set as priority queue in csp.py (for MCV)
-
+    arcs = deque()
+    color_domains = [[i for i in range(color_num)] for j in range(var_num)]
     for i in input_file:
         first, second = map(int, i.split())
         constraints[first].append(second)  # append second column to index of row (which is variable)
         constraints[second].append(first)
-    return CSP(constraints, unsigned_vars, const_num, color_num)
+        if m == 1:
+            arcs.append([first, second])
+    return CSP(constraints, unsigned_vars, const_num, color_num, arcs, color_domains)
 
 
 if __name__ == "__main__":
@@ -122,9 +168,9 @@ if __name__ == "__main__":
         print(
             'Wrong number of arguments. Usage:\ndfsb.py <I> <> <H> '
             '<INPUT_FILE_PATH> <OUTPUT_FILE_PATH>>')
-    csp = create_csp_problem(input_file)
-    if m == 1:
-        csp.set_MCV()
+    csp = create_csp_problem(input_file, m)
+    # if m == 1:
+    #     csp.init_nodes()
     solution = dfs(csp, m)
 
     for i in range(len(solution)):
