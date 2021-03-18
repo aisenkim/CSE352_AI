@@ -137,7 +137,6 @@ def select_unassigned(assignment: dict, csp: CSP) -> Node:
 def create_csp_problem(input_file, m) -> CSP:
     var_num, const_num, color_num = map(int, input_file.readline().split())
     constraints = [[] for i in range(var_num)]
-    unsigned_vars = None  # set as priority queue in csp.py (for MCV)
     arcs = deque()
     color_domains = [[i for i in range(color_num)] for j in range(var_num)]
     for i in input_file:
@@ -146,7 +145,16 @@ def create_csp_problem(input_file, m) -> CSP:
         constraints[second].append(first)
         if m == 1:
             arcs.append([first, second])
-    return CSP(constraints, unsigned_vars, const_num, color_num, arcs, color_domains)
+    return CSP(constraints, const_num, color_num, arcs, color_domains)
+
+
+def make_solution_file(sol):
+    if len(sol) == 0:
+        output_file.write("No answer")
+        return
+    for i in range(len(sol)):
+        output_file.write(str(sol[i].color))
+        output_file.write("\n")
 
 
 if __name__ == "__main__":
@@ -155,6 +163,7 @@ if __name__ == "__main__":
     # M: number of constraints
     # K: possible colors
     # Rest of the lines are constraints
+    # sys.setrecursionlimit(10000)
 
     input_file = ""
     output_file = ""
@@ -175,6 +184,14 @@ if __name__ == "__main__":
 
     for i in range(len(solution)):
         print(solution[i].color)
+
+        # script to check if soution is valid
+    for i in range(len(solution)):
+        for j in csp.constraints[i]:
+            if solution[i].color == solution[j].color:
+                print("False Failed")
+
+    make_solution_file(solution)
 
     input_file.close()
     output_file.close()

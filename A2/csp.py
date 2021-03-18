@@ -3,11 +3,10 @@ from Node import Node
 
 
 class CSP:
-    def __init__(self, constraints, unsigned_vars, constraint_num, color_num, arcs, color_domains):
+    def __init__(self, constraints, constraint_num, color_num, arcs, color_domains):
         self.constraints = constraints
         self.variable_num = len(constraints)
         self.colors_domains = color_domains
-        self.unsigned_vars = unsigned_vars  # list of nodes that contain available color, mcv priority, and lcv priorty
         self.constraint_num = constraint_num
         self.color_num = color_num
         self.arcs = arcs
