@@ -5,6 +5,8 @@ from queue import PriorityQueue
 from collections import deque
 from csp import CSP
 
+import time
+import statistics
 
 def dfs(csp: CSP, m: int) -> dict:
     """
@@ -44,6 +46,8 @@ def dfs_backtrack(assignment: dict, csp: CSP):
 
 
 def dfs_plus_backtrack(assignment: dict, csp: CSP) -> dict:
+    global steps
+    steps += 1
     if len(assignment) == len(csp.constraints):
         return assignment
     # AC_3 to prune domain
@@ -84,7 +88,10 @@ def sort_domains(constraints, colors_domains, var_value, color_num):
 
 
 def AC_3(csp: CSP):
-    local_arcs: deque = copy.deepcopy(csp.arcs)
+    # local_arcs: deque = copy.deepcopy(csp.arcs)
+    local_arcs = deque()
+    for first_second in csp.arcs:
+        local_arcs.append([first_second[0], first_second[1]])
     while local_arcs:
         val_i, val_j = local_arcs.popleft()
         if remove_inconsistent_value(val_i, val_j, csp.colors_domains):
@@ -134,17 +141,17 @@ def select_unassigned(assignment: dict, csp: CSP) -> Node:
             return variable
 
 
-def create_csp_problem(input_file, m) -> CSP:
-    var_num, const_num, color_num = map(int, input_file.readline().split())
-    constraints = [[] for i in range(var_num)]
-    arcs = deque()
-    color_domains = [[i for i in range(color_num)] for j in range(var_num)]
-    for i in input_file:
-        first, second = map(int, i.split())
-        constraints[first].append(second)  # append second column to index of row (which is variable)
-        constraints[second].append(first)
-        if m == 1:
-            arcs.append([first, second])
+def create_csp_problem(input_file, m, var_num, const_num, color_num, constraints, arcs, color_domains) -> CSP:
+    # var_num, const_num, color_num = map(int, input_file.readline().split())
+    # constraints = [[] for i in range(var_num)]
+    # arcs = deque()
+    # color_domains = [[i for i in range(color_num)] for j in range(var_num)]
+    # for i in input_file:
+    #     first, second = map(int, i.split())
+    #     constraints[first].append(second)  # append second column to index of row (which is variable)
+    #     constraints[second].append(first)
+    #     if m == 1:
+    #         arcs.append([first, second])
     return CSP(constraints, const_num, color_num, arcs, color_domains)
 
 
@@ -158,6 +165,7 @@ def make_solution_file(sol):
 
 
 if __name__ == "__main__":
+    sys.setrecursionlimit(10000)
     # N M K as first line in file
     # N: number of variable
     # M: number of constraints
@@ -177,11 +185,31 @@ if __name__ == "__main__":
         print(
             'Wrong number of arguments. Usage:\ndfsb.py <I> <> <H> '
             '<INPUT_FILE_PATH> <OUTPUT_FILE_PATH>>')
-    csp = create_csp_problem(input_file, m)
+
+    var_num, const_num, color_num = map(int, input_file.readline().split())
+    constraints = [[] for i in range(var_num)]
+    arcs = deque()
+    color_domains = [[i for i in range(color_num)] for j in range(var_num)]
+    for i in input_file:
+        first, second = map(int, i.split())
+        constraints[first].append(second)  # append second column to index of row (which is variable)
+        constraints[second].append(first)
+        if m == 1:
+            arcs.append([first, second])
+
+
+
     # if m == 1:
     #     csp.init_nodes()
+    # ))))))))) for testing)))))))))
+    csp = create_csp_problem(input_file, m, var_num, const_num, color_num, constraints, arcs, color_domains)
+    steps = 0
+    start_time = time.time()
     solution = dfs(csp, m)
+    print(time.time() - start_time)
 
+
+    """
     for i in range(len(solution)):
         print(solution[i].color)
 
@@ -190,6 +218,7 @@ if __name__ == "__main__":
         for j in csp.constraints[i]:
             if solution[i].color == solution[j].color:
                 print("False Failed")
+    """
 
     make_solution_file(solution)
 

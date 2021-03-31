@@ -3,8 +3,12 @@ import random
 from Node import Node
 from csp import CSP
 
+import time
+import statistics
+
 
 def min_conflict(csp: CSP, max_steps: int, current_state: list):
+    start_time = time.time()
     # current_state = list of list containing colors (2d list)
     # declare vairble to keep track of colors of solution
     # set used list to -1
@@ -14,7 +18,9 @@ def min_conflict(csp: CSP, max_steps: int, current_state: list):
     for i in range(max_steps):
         if check_solution(current_state, csp):
             # print("Steps taken to solve: ", i)
-            return current_state
+            # return current_state
+            print("time : ", time.time() - start_time)
+            return i
         if len(conflict_vars) == 0:
             conflict_vars = gather_conflict_vars(csp.constraints, current_state, assignment)
         """
@@ -98,7 +104,8 @@ def set_current_state(var_num, color_num):
     return current_state
 
 
-def init_csp(input_file) -> CSP:
+def init_csp(input_file, var_num, const_num, color_num, constraints) -> CSP:
+    """
     # var_num, const_num, color_num = map(int, input_file.readline().split())
     constraints = [[] for i in range(var_num)]
     # color_used =[[i for i in range(color_num)] for i in range(var_num)]
@@ -106,6 +113,7 @@ def init_csp(input_file) -> CSP:
         first, second = map(int, i.split())
         constraints[first].append(second)  # append second column to index of row (which is variable)
         constraints[second].append(first)
+    """
     return CSP(constraints, const_num, color_num, None, None)
 
 
@@ -139,20 +147,41 @@ if __name__ == "__main__":
             '<INPUT_FILE_PATH> <OUTPUT_FILE_PATH>>')
 
     var_num, const_num, color_num = map(int, input_file.readline().split())
-    csp = init_csp(input_file)
-    cur_state = set_current_state(var_num, color_num)
-    # call min_conflict() here
-    solution = min_conflict(csp, 1000000, cur_state)
+
+    constraints = [[] for i in range(var_num)]
+    # color_used =[[i for i in range(color_num)] for i in range(var_num)]
+    for i in input_file:
+        first, second = map(int, i.split())
+        constraints[first].append(second)  # append second column to index of row (which is variable)
+        constraints[second].append(first)
+
+    answers = []
+    for i in range(20):
+        csp = init_csp(input_file, var_num, const_num, color_num, constraints)
+        cur_state = set_current_state(var_num, color_num)
+        # call min_conflict() here
+        solution = min_conflict(csp, 1000000, cur_state)
+
+        answers.append(solution)
+
+    mean = statistics.mean(answers)
+    standard_dev = statistics.stdev(answers)
+    print(answers)
+    print("mean: ", mean)
+    print("std_dev: ", standard_dev)
+
+    """
     make_solution_file(solution)
 
     for i in range(len(solution)):
         print(solution[i].color)
+
 
     # script to check if soution is valid
     for i in range(len(solution)):
         for j in csp.constraints[i]:
             if solution[i].color == solution[j].color:
                 print("False Failed")
-
+"""
     input_file.close()
     output_file.close()
